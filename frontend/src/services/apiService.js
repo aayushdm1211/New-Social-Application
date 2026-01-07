@@ -1,4 +1,4 @@
-const API_BASE = "http://192.168.29.20:5000/api/auth";
+export const API_BASE = "http://192.168.29.129:5000/api/auth";
 
 export const authRequest = async (endpoint, body) => {
     const res = await fetch(`${API_BASE}${endpoint}`, {

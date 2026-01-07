@@ -5,6 +5,9 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 export const loginUser = async (email, password) => {
   const data = await authRequest("/login", { email, password });
   await AsyncStorage.setItem("userId", data.userId);
+  await AsyncStorage.setItem("userRole", data.role);
+  if (data.name) await AsyncStorage.setItem("userName", data.name);
+  if (data.profilePic) await AsyncStorage.setItem("profilePic", data.profilePic);
   return data;
 };
 

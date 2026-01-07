@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Meet</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background: #000;
+            color: white;
+            margin: 0;
+        }
+
+        video {
+            width: 45%;
+            border: 2px solid white;
+            margin: 10px;
+            border-radius: 10px;
+        }
+
+        #videos {
+            display: flex;
+            width: 100%;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .controls {
+            position: absolute;
+            bottom: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+
+        button.end {
+            background: #dc3545;
+        }
+    </style>
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+
+<body>
+    <h2>Secure Video Meet</h2>
+    <div id="errorMsg"
+        style="color: red; background: rgba(0,0,0,0.7); padding: 10px; border-radius: 5px; display: none; max-width: 80%; text-align: center; margin-bottom: 10px;">
+    </div>
+    <div id="videos">
+        <video id="localVideo" autoplay muted playsinline></video>
+        <video id="remoteVideo" autoplay playsinline></video>
+    </div>
+    <div class="controls">
+        <button onclick="endCall()" class="end">End Call</button>
+    </div>
+
+    <script>
+        const socket = io();
+        const urlParams = new URLSearchParams(window.location.search);
+        const roomId = urlParams.get('room');
+
+        let localStream;
+        let peerConnection;
+        const config = {
+            iceServers: [
+                { urls: "stun:stun.l.google.com:19302" } // Public STUN server
+            ]
+        };
+
+        const localVideo = document.getElementById('localVideo');
+        const remoteVideo = document.getElementById('remoteVideo');
+
+        if (!roomId) {
+            alert("No room specified!");
+        } else {
+            startMeet();
+        }
+
+        async function startMeet() {
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                localVideo.srcObject = localStream;
+
+                socket.emit('join-meet', roomId);
+
+                socket.on('user-connected', (userId) => {
+                    console.log("User connected:", userId);
+                    createOffer();
+                });
+
+                socket.on('offer', async (data) => {
+                    await createAnswer(data.sdp);
+                });
+
+                socket.on('answer', async (data) => {
+                    await peerConnection.setRemoteDescription(new RTCSessionDescription(data.sdp));
+                });
+
+                socket.on('ice-candidate', async (data) => {
+                    if (peerConnection) {
+                        await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+                    }
+                });
+
+
+            } catch (err) {
+                console.error("Error accessing media devices.", err);
+                const errorDiv = document.getElementById('errorMsg');
+                if (errorDiv) {
+                    errorDiv.style.display = 'block';
+                    errorDiv.innerHTML = `<strong>Camera Error:</strong> ${err.message}<br><small>Note: Video requires HTTPS. Go back and use "Schedule" in the menu.</small>`;
+                }
+            }
+        }
+
+        function createPeerConnection() {
+            peerConnection = new RTCPeerConnection(config);
+
+            localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+
+            peerConnection.onicecandidate = (event) => {
+                if (event.candidate) {
+                    socket.emit('ice-candidate', { roomId, candidate: event.candidate });
+                }
+            };
+
+            peerConnection.ontrack = (event) => {
+                remoteVideo.srcObject = event.streams[0];
+            };
+        }
+
+        async function createOffer() {
+            createPeerConnection();
+            const offer = await peerConnection.createOffer();
+            await peerConnection.setLocalDescription(offer);
+            socket.emit('offer', { roomId, sdp: offer });
+        }
+
+        async function createAnswer(offerSdp) {
+            createPeerConnection();
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(offerSdp));
+            const answer = await peerConnection.createAnswer();
+            await peerConnection.setLocalDescription(answer);
+            socket.emit('answer', { roomId, sdp: answer });
+        }
+
+        function endCall() {
+            if (peerConnection) peerConnection.close();
+            window.close(); // Works if opened via window.open, otherwise just stops
+            // In WebView, we might want to postMessage back to RN to close the view
+            if (window.ReactNativeWebView) {
+                window.ReactNativeWebView.postMessage("END_CALL");
+            }
+        }
+    </script>
+</body>
+
+</html>

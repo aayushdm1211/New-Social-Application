@@ -1,4 +1,4 @@
-const OTP_BASE = "http://192.168.29.20:5001";
+const OTP_BASE = "http://192.168.29.129:5001";
 
 export const requestOTP = async (email) => {
     const res = await fetch(`${OTP_BASE}/send-otp`, {
