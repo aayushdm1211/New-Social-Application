@@ -1,22 +1,26 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../src/styles/theme';
+import { useTheme } from '../../src/context/ThemeContext';
 import { Platform } from 'react-native';
 
 export default function TabLayout() {
+    const { colors } = useTheme();
+    const theme = colors || Colors;
+
     return (
         <Tabs screenOptions={{
             headerShown: false,
-            tabBarActiveTintColor: Colors.secondary,
-            tabBarInactiveTintColor: Colors.textLight,
+            tabBarActiveTintColor: theme.secondary,
+            tabBarInactiveTintColor: theme.textSecondary || theme.textLight,
             tabBarStyle: {
-                backgroundColor: Colors.surface,
-                borderTopColor: Colors.border,
+                backgroundColor: theme.surface,
+                borderTopColor: theme.border,
                 height: Platform.OS === 'ios' ? 85 : 60,
                 paddingBottom: Platform.OS === 'ios' ? 30 : 10,
                 paddingTop: 10,
                 elevation: 8,
-                shadowColor: '#000',
+                shadowColor: theme.shadow,
                 shadowOffset: { width: 0, height: -2 },
                 shadowOpacity: 0.1,
                 shadowRadius: 4,

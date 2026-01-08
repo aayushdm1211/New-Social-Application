@@ -4,14 +4,21 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { API_BASE } from '../../src/services/apiService';
+import { Colors } from '../../src/styles/theme';
+import { useTheme } from '../../src/context/ThemeContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Clipboard from 'expo-clipboard';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Platform } from 'react-native';
 
 export default function AdminDashboard() {
+    const { colors, toggleTheme, isDark } = useTheme();
+    const theme = colors || Colors;
+    const styles = getStyles(theme);
+
     const router = useRouter();
     const [users, setUsers] = useState([]);
+    const [showMenu, setShowMenu] = useState(false);
 
     // Scroll Indicator State
 
@@ -129,9 +136,23 @@ export default function AdminDashboard() {
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
                 <Text style={styles.headerText}>Admin Dashboard</Text>
-                <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn}>
-                    <Ionicons name="log-out-outline" size={24} color="white" />
+                <TouchableOpacity onPress={() => setShowMenu(!showMenu)} style={styles.menuBtn}>
+                    <Ionicons name="ellipsis-vertical" size={24} color={theme.white} />
                 </TouchableOpacity>
+
+                {showMenu && (
+                    <View style={styles.dropdownMenu}>
+                        <TouchableOpacity onPress={() => { toggleTheme(); setShowMenu(false); }} style={styles.dropdownItem}>
+                            <Ionicons name={isDark ? "sunny-outline" : "moon-outline"} size={20} color={theme.textPrimary} />
+                            <Text style={styles.dropdownText}>{isDark ? "Light Mode" : "Dark Mode"}</Text>
+                        </TouchableOpacity>
+                        <View style={styles.dropdownDivider} />
+                        <TouchableOpacity onPress={() => { handleLogout(); setShowMenu(false); }} style={styles.dropdownItem}>
+                            <Ionicons name="log-out-outline" size={20} color={theme.error} />
+                            <Text style={[styles.dropdownText, { color: theme.error }]}>Logout</Text>
+                        </TouchableOpacity>
+                    </View>
+                )}
             </View>
 
             <ScrollView contentContainerStyle={{ padding: 20 }}>
@@ -148,17 +169,17 @@ export default function AdminDashboard() {
                         onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}
                     >
                         <TouchableOpacity style={styles.card} onPress={() => router.push('/announcement')}>
-                            <Ionicons name="megaphone-outline" size={32} color="#005b96" />
+                            <Ionicons name="megaphone-outline" size={32} color={theme.secondary} />
                             <Text style={styles.cardText}>Announcements</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity style={styles.card} onPress={() => setMeetModalVisible(true)}>
-                            <Ionicons name="videocam-outline" size={32} color="#005b96" />
+                            <Ionicons name="videocam-outline" size={32} color={theme.secondary} />
                             <Text style={styles.cardText}>Manage Meetings</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity style={styles.card} onPress={() => router.push('/gd')}>
-                            <Ionicons name="people-outline" size={32} color="#005b96" />
+                            <Ionicons name="people-outline" size={32} color={theme.secondary} />
                             <Text style={styles.cardText}>Group Discussion</Text>
                         </TouchableOpacity>
                     </ScrollView>
@@ -309,10 +330,10 @@ export default function AdminDashboard() {
     );
 }
 
-const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#F5F7FA' },
+const getStyles = (Colors) => StyleSheet.create({
+    container: { flex: 1, backgroundColor: Colors.background },
     header: {
-        backgroundColor: '#011f4b',
+        backgroundColor: Colors.primary,
         padding: 20,
         paddingTop: 30,
         flexDirection: 'row',
@@ -320,44 +341,63 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         position: 'relative'
     },
-    headerText: { color: 'white', fontSize: 24, fontWeight: 'bold' },
-    logoutBtn: { position: 'absolute', right: 20, top: 35 },
+    headerText: { color: Colors.white, fontSize: 24, fontWeight: 'bold' },
+    menuBtn: { position: 'absolute', right: 20, top: 35, padding: 5 },
+    dropdownMenu: {
+        position: 'absolute',
+        top: 70,
+        right: 20,
+        backgroundColor: Colors.surface,
+        borderRadius: 10,
+        elevation: 10,
+        zIndex: 100,
+        minWidth: 150,
+        paddingVertical: 5,
+        shadowColor: Colors.shadow,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 4
+    },
+    dropdownItem: { flexDirection: 'row', alignItems: 'center', padding: 12 },
+    dropdownText: { marginLeft: 10, fontSize: 16, color: Colors.textPrimary, fontWeight: '500' },
+    dropdownDivider: { height: 1, backgroundColor: Colors.border, marginHorizontal: 10 },
+
     horizontalScroll: { marginBottom: 5, flexGrow: 0 },
     horizontalContent: { paddingHorizontal: 5, paddingVertical: 10 },
-    card: { width: 120, backgroundColor: 'white', padding: 10, borderRadius: 10, alignItems: 'center', marginRight: 15, elevation: 3, height: 90, justifyContent: 'center' },
-    cardText: { marginTop: 5, fontSize: 11, fontWeight: 'bold', color: '#011f4b', textAlign: 'center' },
-    scrollTrack: { height: 4, width: 60, backgroundColor: '#e1e8ed', borderRadius: 2, alignSelf: 'center', marginBottom: 20 },
-    scrollIndicator: { height: 4, backgroundColor: '#005b96', borderRadius: 2 },
-    sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 10 },
-    userItem: { flexDirection: 'row', backgroundColor: 'white', padding: 15, borderRadius: 10, marginBottom: 10, alignItems: 'center', elevation: 1 },
-    avatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#005b96', justifyContent: 'center', alignItems: 'center', marginRight: 15 },
-    userName: { fontWeight: 'bold', fontSize: 16 },
-    userEmail: { color: '#666', fontSize: 12 },
+    card: { width: 120, backgroundColor: Colors.surface, padding: 10, borderRadius: 10, alignItems: 'center', marginRight: 15, elevation: 3, height: 90, justifyContent: 'center' },
+    cardText: { marginTop: 5, fontSize: 11, fontWeight: 'bold', color: Colors.textPrimary, textAlign: 'center' },
+    scrollTrack: { height: 4, width: 60, backgroundColor: Colors.border, borderRadius: 2, alignSelf: 'center', marginBottom: 20 },
+    scrollIndicator: { height: 4, backgroundColor: Colors.secondary, borderRadius: 2 },
+    sectionTitle: { fontSize: 18, fontWeight: 'bold', color: Colors.textPrimary, marginBottom: 10 },
+    userItem: { flexDirection: 'row', backgroundColor: Colors.surface, padding: 15, borderRadius: 10, marginBottom: 10, alignItems: 'center', elevation: 1 },
+    avatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.secondary, justifyContent: 'center', alignItems: 'center', marginRight: 15 },
+    userName: { fontWeight: 'bold', fontSize: 16, color: Colors.textPrimary },
+    userEmail: { color: Colors.textSecondary, fontSize: 12 },
 
     // Modal & Meeting Styles
-    modalView: { margin: 20, marginTop: '30%', backgroundColor: 'white', borderRadius: 20, padding: 25, elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 4 },
-    modalTitle: { fontSize: 22, fontWeight: 'bold', marginBottom: 20, textAlign: 'center', color: '#011f4b' },
-    tabContainer: { flexDirection: 'row', marginBottom: 20, borderBottomWidth: 1, borderBottomColor: '#eee' },
+    modalView: { margin: 20, marginTop: '30%', backgroundColor: Colors.surface, borderRadius: 20, padding: 25, elevation: 5, shadowColor: Colors.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 4 },
+    modalTitle: { fontSize: 22, fontWeight: 'bold', marginBottom: 20, textAlign: 'center', color: Colors.textPrimary },
+    tabContainer: { flexDirection: 'row', marginBottom: 20, borderBottomWidth: 1, borderBottomColor: Colors.border },
     tab: { flex: 1, paddingVertical: 10, alignItems: 'center' },
-    activeTab: { borderBottomWidth: 2, borderBottomColor: '#005b96' },
-    tabText: { fontSize: 16, color: '#999' },
-    activeTabText: { color: '#005b96', fontWeight: 'bold' },
+    activeTab: { borderBottomWidth: 2, borderBottomColor: Colors.secondary },
+    tabText: { fontSize: 16, color: Colors.textLight },
+    activeTabText: { color: Colors.secondary, fontWeight: 'bold' },
     tabContent: { marginBottom: 10 },
-    infoText: { textAlign: 'center', color: '#666', marginBottom: 20 },
-    fullWidthBtn: { backgroundColor: '#005b96', padding: 15, borderRadius: 10, alignItems: 'center', flexDirection: 'row', justifyContent: 'center' },
-    btnText: { color: 'white', fontWeight: 'bold', fontSize: 16 },
-    input: { borderWidth: 1, borderColor: '#ddd', borderRadius: 10, padding: 12, marginBottom: 15, fontSize: 16 },
+    infoText: { textAlign: 'center', color: Colors.textSecondary, marginBottom: 20 },
+    fullWidthBtn: { backgroundColor: Colors.secondary, padding: 15, borderRadius: 10, alignItems: 'center', flexDirection: 'row', justifyContent: 'center' },
+    btnText: { color: Colors.white, fontWeight: 'bold', fontSize: 16 },
+    input: { borderWidth: 1, borderColor: Colors.border, borderRadius: 10, padding: 12, marginBottom: 15, fontSize: 16, color: Colors.textPrimary, backgroundColor: Colors.inputBg },
     dateTimeRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 },
-    dateBtn: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#ddd', padding: 10, borderRadius: 8, width: '48%' },
-    dateText: { marginLeft: 8, color: '#333' },
+    dateBtn: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: Colors.border, padding: 10, borderRadius: 8, width: '48%' },
+    dateText: { marginLeft: 8, color: Colors.textPrimary },
     closeBtn: { marginTop: 15, alignItems: 'center', padding: 10 },
 
     // Success Modal
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' },
-    successView: { width: '80%', backgroundColor: 'white', borderRadius: 20, padding: 30, alignItems: 'center', elevation: 10 },
-    successTitle: { fontSize: 24, fontWeight: 'bold', marginVertical: 10, color: '#333' },
-    codeBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f0f2f5', padding: 15, borderRadius: 10, marginVertical: 20, width: '100%', justifyContent: 'space-between' },
-    codeTextDisplay: { fontSize: 28, fontWeight: 'bold', letterSpacing: 2, color: '#005b96' },
+    successView: { width: '80%', backgroundColor: Colors.surface, borderRadius: 20, padding: 30, alignItems: 'center', elevation: 10 },
+    successTitle: { fontSize: 24, fontWeight: 'bold', marginVertical: 10, color: Colors.textPrimary },
+    codeBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.inputBg, padding: 15, borderRadius: 10, marginVertical: 20, width: '100%', justifyContent: 'space-between' },
+    codeTextDisplay: { fontSize: 28, fontWeight: 'bold', letterSpacing: 2, color: Colors.secondary },
     modalButtons: { flexDirection: 'row', width: '100%', justifyContent: 'space-between' },
-    actionBtn: { flex: 1, padding: 12, borderRadius: 8, alignItems: 'center', backgroundColor: '#005b96', marginHorizontal: 5 }
+    actionBtn: { flex: 1, padding: 12, borderRadius: 8, alignItems: 'center', backgroundColor: Colors.secondary, marginHorizontal: 5 }
 });

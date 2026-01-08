@@ -14,17 +14,17 @@ export default function Index() {
 
   useEffect(() => {
     // 1. Logo Animation
-    logoOpacity.value = withTiming(1, { duration: 1000 });
+    logoOpacity.value = withTiming(1, { duration: 800 });
     logoScale.value = withSpring(1, { damping: 10, stiffness: 100 });
 
     // 2. Text Animation (Delayed)
-    textOpacity.value = withDelay(800, withTiming(1, { duration: 800 }));
-    textTranslateY.value = withDelay(800, withSpring(0));
+    textOpacity.value = withDelay(500, withTiming(1, { duration: 800 }));
+    textTranslateY.value = withDelay(500, withSpring(0));
 
     // 3. Navigate to Login
     const timer = setTimeout(() => {
       router.replace("/(auth)/login");
-    }, 3000);
+    }, 2000);
 
     return () => clearTimeout(timer);
   }, []);

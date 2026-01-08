@@ -5,11 +5,17 @@ import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import io from 'socket.io-client';
 import { Ionicons } from '@expo/vector-icons';
+import { Colors, GlobalStyles } from '../../src/styles/theme'; // Assuming these paths are correct
+import { useTheme } from '../../src/context/ThemeContext'; // Assuming this path is correct
 
 const BACKEND_URL = "http://192.168.29.129:5000";
 
 export default function GroupDiscussionScreen() {
     const router = useRouter();
+    const { colors } = useTheme();
+    const theme = colors || Colors; // Fallback to default Colors if context not ready
+    const styles = getStyles(theme);
+
     const [isAdmin, setIsAdmin] = useState(false);
     const [userId, setUserId] = useState(null);
     const [isActive, setIsActive] = useState(false);
@@ -189,14 +195,14 @@ export default function GroupDiscussionScreen() {
     };
 
     if (loading) {
-        return <View style={styles.center}><ActivityIndicator size="large" color="#005b96" /></View>;
+        return <View style={styles.center}><ActivityIndicator size="large" color={theme.secondary} /></View>;
     }
 
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()} style={{ position: 'absolute', left: 20 }}>
-                    <Ionicons name="arrow-back" size={24} color="white" />
+                    <Ionicons name="arrow-back" size={24} color={theme.white} />
                 </TouchableOpacity>
                 <Text style={styles.headerText}>Group Discussion</Text>
                 {isAdmin && isActive && (
@@ -227,6 +233,7 @@ export default function GroupDiscussionScreen() {
                             onChangeText={setDurationInput}
                             keyboardType="numeric"
                             placeholder="Min"
+                            placeholderTextColor={theme.textLight}
                         />
                         <TouchableOpacity style={styles.btnStart} onPress={handleStartGD}>
                             <Text style={styles.btnText}>Start Discussion</Text>
@@ -274,7 +281,7 @@ export default function GroupDiscussionScreen() {
                                 isMe ? { justifyContent: 'flex-end' } : { justifyContent: 'flex-start' }
                             ]}>
                                 {!isMe && (
-                                    <Avatar uri={avatarUri} name={senderName} />
+                                    <Avatar uri={avatarUri} name={senderName} styles={styles} />
                                 )}
                                 <View style={[
                                     styles.msgBubble,
@@ -289,7 +296,7 @@ export default function GroupDiscussionScreen() {
                                         </Text>
                                     )}
                                     <Text style={isMe ? styles.msgTextMe : styles.msgTextOther}>{item.content}</Text>
-                                    <Text style={[styles.msgTime, isMe ? { color: '#e0e0e0' } : { color: '#999' }]}>
+                                    <Text style={[styles.msgTime, isMe ? { color: 'rgba(255,255,255,0.7)' } : { color: theme.textSecondary }]}>
                                         {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                     </Text>
                                 </View>
@@ -306,15 +313,16 @@ export default function GroupDiscussionScreen() {
                             value={text}
                             onChangeText={setText}
                             placeholder="Type a message..."
+                            placeholderTextColor={theme.textLight}
                         />
                         <TouchableOpacity onPress={sendMessage}>
-                            <Ionicons name="send" size={24} color="#005b96" />
+                            <Ionicons name="send" size={24} color={theme.secondary} />
                         </TouchableOpacity>
                     </View>
                 ) : (
                     <View style={styles.closedInputBox}>
-                        <Ionicons name="lock-closed-outline" size={20} color="gray" style={{ marginRight: 8 }} />
-                        <Text style={{ color: 'gray', fontStyle: 'italic' }}>Discussion is closed.</Text>
+                        <Ionicons name="lock-closed-outline" size={20} color={theme.textSecondary} style={{ marginRight: 8 }} />
+                        <Text style={{ color: theme.textSecondary, fontStyle: 'italic' }}>Discussion is closed.</Text>
                     </View>
                 )}
             </KeyboardAvoidingView>
@@ -322,7 +330,7 @@ export default function GroupDiscussionScreen() {
     );
 }
 
-const Avatar = ({ uri, name }) => {
+const Avatar = ({ uri, name, styles }) => {
     const [error, setError] = useState(false);
 
     if (uri && !error) {
@@ -342,36 +350,38 @@ const Avatar = ({ uri, name }) => {
     );
 };
 
-const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#F5F7FA' },
-    header: { backgroundColor: '#011f4b', padding: 15, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
-    headerText: { color: 'white', fontSize: 20, fontWeight: 'bold' },
-    center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-    statusContainer: { padding: 10, alignItems: 'center', backgroundColor: '#e1e8ed' },
-    timerBox: { flexDirection: 'row', backgroundColor: '#ef5350', padding: 10, borderRadius: 20, alignItems: 'center' },
-    timerText: { color: 'white', fontWeight: 'bold', marginLeft: 5 },
-    closedText: { color: '#011f4b', fontWeight: 'bold' },
-    adminPanel: { padding: 15, backgroundColor: 'white', margin: 10, borderRadius: 10, elevation: 3 },
-    adminTitle: { fontWeight: 'bold', marginBottom: 10, color: '#011f4b' },
-    row: { flexDirection: 'row', alignItems: 'center' },
-    input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 5, padding: 8, width: 60, marginRight: 10, textAlign: 'center' },
-    btnStart: { backgroundColor: '#005b96', padding: 10, borderRadius: 5, flex: 1, alignItems: 'center' },
-    btnStop: { backgroundColor: '#d32f2f', padding: 10, borderRadius: 5, width: '100%', alignItems: 'center' },
-    btnText: { color: 'white', fontWeight: 'bold' },
-    msgBubble: { padding: 10, borderRadius: 10, marginBottom: 10, maxWidth: '80%' },
-    msgMe: { alignSelf: 'flex-end', backgroundColor: '#005b96' },
-    msgOther: { alignSelf: 'flex-start', backgroundColor: '#fff' },
-    msgTextMe: { color: 'white' },
-    msgTextOther: { color: '#000' },
-    inputContainer: { flexDirection: 'row', padding: 10, backgroundColor: 'white', alignItems: 'center' },
-    msgInput: { flex: 1, backgroundColor: '#f0f0f0', borderRadius: 20, padding: 10, marginRight: 10 },
-    btnStopHeader: { position: 'absolute', right: 20, backgroundColor: '#d32f2f', paddingVertical: 5, paddingHorizontal: 15, borderRadius: 20 },
-    btnEndText: { color: 'white', fontWeight: 'bold', fontSize: 12 },
-    msgRow: { flexDirection: 'row', alignItems: 'flex-end', marginBottom: 10 },
-    avatar: { width: 35, height: 35, borderRadius: 17.5, marginRight: 8, backgroundColor: '#e0e0e0' },
-    avatarFallback: { justifyContent: 'center', alignItems: 'center', backgroundColor: '#005b96' },
-    avatarText: { color: 'white', fontWeight: 'bold', fontSize: 14 },
-    senderName: { fontSize: 10, color: '#e65100', fontWeight: 'bold', marginBottom: 2 },
-    msgTime: { fontSize: 10, alignSelf: 'flex-end', marginTop: 4 },
-    closedInputBox: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 15, backgroundColor: '#f0f0f0', borderTopWidth: 1, borderTopColor: '#ddd' }
-});
+function getStyles(theme) {
+    return StyleSheet.create({
+        container: { flex: 1, backgroundColor: theme.background },
+        header: { backgroundColor: theme.primary, padding: 15, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+        headerText: { color: theme.white, fontSize: 20, fontWeight: 'bold' },
+        center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+        statusContainer: { padding: 10, alignItems: 'center', backgroundColor: theme.inputBg },
+        timerBox: { flexDirection: 'row', backgroundColor: '#ef5350', padding: 10, borderRadius: 20, alignItems: 'center' }, // Keep hardcoded as per instruction
+        timerText: { color: theme.white, fontWeight: 'bold', marginLeft: 5 },
+        closedText: { color: theme.primary, fontWeight: 'bold' },
+        adminPanel: { padding: 15, backgroundColor: theme.surface, margin: 10, borderRadius: 10, elevation: 3 },
+        adminTitle: { fontWeight: 'bold', marginBottom: 10, color: theme.textPrimary },
+        row: { flexDirection: 'row', alignItems: 'center' },
+        input: { borderWidth: 1, borderColor: theme.border, borderRadius: 5, padding: 8, width: 60, marginRight: 10, textAlign: 'center', color: theme.textPrimary },
+        btnStart: { backgroundColor: theme.secondary, padding: 10, borderRadius: 5, flex: 1, alignItems: 'center' },
+        btnStop: { backgroundColor: '#d32f2f', padding: 10, borderRadius: 5, width: '100%', alignItems: 'center' }, // Keep hardcoded as per instruction
+        btnText: { color: theme.white, fontWeight: 'bold' },
+        msgBubble: { padding: 10, borderRadius: 10, marginBottom: 10, maxWidth: '80%' },
+        msgMe: { alignSelf: 'flex-end', backgroundColor: theme.secondary },
+        msgOther: { alignSelf: 'flex-start', backgroundColor: theme.surface },
+        msgTextMe: { color: theme.white },
+        msgTextOther: { color: theme.textPrimary },
+        inputContainer: { flexDirection: 'row', padding: 10, backgroundColor: theme.surface, alignItems: 'center' },
+        msgInput: { flex: 1, backgroundColor: theme.inputBg, borderRadius: 20, padding: 10, marginRight: 10, color: theme.textPrimary },
+        btnStopHeader: { position: 'absolute', right: 20, backgroundColor: '#d32f2f', paddingVertical: 5, paddingHorizontal: 15, borderRadius: 20 }, // Keep hardcoded as per instruction
+        btnEndText: { color: theme.white, fontWeight: 'bold', fontSize: 12 },
+        msgRow: { flexDirection: 'row', alignItems: 'flex-end', marginBottom: 10 },
+        avatar: { width: 35, height: 35, borderRadius: 17.5, marginRight: 8, backgroundColor: theme.inputBg },
+        avatarFallback: { justifyContent: 'center', alignItems: 'center', backgroundColor: theme.secondary },
+        avatarText: { color: theme.white, fontWeight: 'bold', fontSize: 14 },
+        senderName: { fontSize: 10, color: '#e65100', fontWeight: 'bold', marginBottom: 2 }, // Keep hardcoded as per instruction
+        msgTime: { fontSize: 10, alignSelf: 'flex-end', marginTop: 4 },
+        closedInputBox: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 15, backgroundColor: theme.inputBg, borderTopWidth: 1, borderTopColor: theme.border }
+    });
+}

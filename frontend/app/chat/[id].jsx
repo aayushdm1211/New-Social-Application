@@ -6,9 +6,16 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useTheme } from '../../src/context/ThemeContext';
+import { Colors } from '../../src/styles/theme';
+
 const BACKEND_URL = "http://192.168.29.129:5000";
 
 export default function ChatScreen() {
+    const { colors } = useTheme();
+    const theme = colors || Colors;
+    const styles = getStyles(theme);
+
     const { id } = useLocalSearchParams();
     const router = useRouter();
     const [myId, setMyId] = useState(null);
@@ -141,9 +148,9 @@ export default function ChatScreen() {
     };
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: '#075E54' }} edges={['top']}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: theme.primary }} edges={['top']}>
             <Stack.Screen options={{ headerShown: false }} />
-            <StatusBar barStyle="light-content" backgroundColor="#075E54" />
+            <StatusBar barStyle="light-content" backgroundColor={theme.primary} />
 
             {/* Creative Header */}
             <View style={styles.header}>
@@ -152,7 +159,6 @@ export default function ChatScreen() {
                 </TouchableOpacity>
                 <View style={styles.avatarContainer}>
                     <Ionicons name="person-circle" size={45} color="#fff" />
-                    <View style={styles.onlineDot} />
                 </View>
                 <View style={styles.headerInfo}>
                     <Text style={styles.headerTitle}>Admin Support</Text>
@@ -165,8 +171,9 @@ export default function ChatScreen() {
 
             <ImageBackground
                 source={{ uri: 'https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png' }}
-                style={{ flex: 1, backgroundColor: '#E5DDD5' }}
+                style={{ flex: 1, backgroundColor: theme.background }} // Dynamic BG
                 resizeMode="repeat"
+                imageStyle={{ opacity: 0.1 }} // Fade the pattern in dark mode? Or generally?
             >
                 <KeyboardAvoidingView
                     behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -188,7 +195,7 @@ export default function ChatScreen() {
                                     (typeof item.sender === 'object' ? item.sender._id : item.sender) === myId ? styles.msgMe : styles.msgOther
                                 ]}
                             >
-                                <Text style={styles.msgText}>{item.content}</Text>
+                                <Text style={(typeof item.sender === 'object' ? item.sender._id : item.sender) === myId ? styles.msgTextMe : styles.msgText}>{item.content}</Text>
                                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', marginTop: 2 }}>
                                     <Text style={styles.timeText}>
                                         {item.createdAt
@@ -220,33 +227,23 @@ export default function ChatScreen() {
     );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (Colors) => StyleSheet.create({
     header: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#075E54', // WhatsApp Teal
+        backgroundColor: Colors.primary, // Hike Blue
         paddingHorizontal: 15,
         paddingVertical: 10,
         borderBottomWidth: 1,
-        borderBottomColor: '#003366',
+        borderBottomColor: Colors.primaryLight,
         elevation: 4
     },
     backBtn: { marginRight: 15 },
     avatarContainer: { position: 'relative' },
-    onlineDot: {
-        position: 'absolute',
-        bottom: 2,
-        right: 2,
-        width: 12,
-        height: 12,
-        borderRadius: 6,
-        backgroundColor: '#4caf50',
-        borderWidth: 2,
-        borderColor: '#075E54'
-    },
+    // onlineDot removed
     headerInfo: { flex: 1, marginLeft: 10 },
-    headerTitle: { color: 'white', fontSize: 18, fontWeight: 'bold' },
-    headerStatus: { color: '#b0bec5', fontSize: 12 },
+    headerTitle: { color: Colors.white, fontSize: 18, fontWeight: 'bold' },
+    headerStatus: { color: Colors.textLight, fontSize: 12 },
     callBtn: { padding: 8, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 20 },
     msgBubble: {
         marginHorizontal: 15,
@@ -256,23 +253,26 @@ const styles = StyleSheet.create({
         maxWidth: '75%',
         elevation: 1
     },
-    msgMe: { alignSelf: 'flex-end', backgroundColor: '#dcf8c6', borderBottomRightRadius: 2 },
-    msgOther: { alignSelf: 'flex-start', backgroundColor: '#fff', borderBottomLeftRadius: 2 },
-    msgText: { fontSize: 16, color: '#333' },
-    timeText: { fontSize: 10, color: '#333', alignSelf: 'flex-end', marginTop: 5, opacity: 0.7 },
-    inputContainer: { flexDirection: 'row', padding: 10, alignItems: 'center' },
+    msgMe: { alignSelf: 'flex-end', backgroundColor: Colors.secondary, borderBottomRightRadius: 2 },
+    msgOther: { alignSelf: 'flex-start', backgroundColor: Colors.surface, borderBottomLeftRadius: 2 },
+    msgText: { fontSize: 16, color: Colors.textPrimary },
+    // For "Me", text should be white
+    msgTextMe: { fontSize: 16, color: Colors.white },
+
+    timeText: { fontSize: 10, color: Colors.white, alignSelf: 'flex-end', marginTop: 5, opacity: 0.8 },
+    inputContainer: { flexDirection: 'row', padding: 10, alignItems: 'center', backgroundColor: Colors.surface },
     input: {
         flex: 1,
-        backgroundColor: 'white',
+        backgroundColor: Colors.inputBg,
         borderRadius: 25,
         paddingHorizontal: 15,
         paddingVertical: 10,
         marginRight: 10,
-        elevation: 2,
-        color: '#000'
+        elevation: 1,
+        color: Colors.textPrimary
     },
     sendBtn: {
-        backgroundColor: '#075E54', // WhatsApp Teal
+        backgroundColor: Colors.secondary,
         padding: 12,
         borderRadius: 25,
         elevation: 2,

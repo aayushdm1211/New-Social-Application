@@ -7,10 +7,15 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 
 import { API_BASE } from '../../src/services/apiService';
-import { Colors, GlobalStyles } from '../../src/styles/theme';
+import { GlobalStyles, Colors } from '../../src/styles/theme';
+import { useTheme } from '../../src/context/ThemeContext';
 
 export default function CommunityScreen() {
   const router = useRouter();
+  const { colors, toggleTheme, isDark } = useTheme();
+  const theme = colors || Colors;
+  const styles = getStyles(theme); // Dynamic Styles
+
   const [modalVisible, setModalVisible] = useState(false);
   const [meetCode, setMeetCode] = useState('');
   const [userName, setUserName] = useState('');
@@ -213,9 +218,14 @@ export default function CommunityScreen() {
             <Text style={styles.menuText}>Change Profile</Text>
           </TouchableOpacity>
           <View style={styles.menuDivider} />
+          <TouchableOpacity style={styles.menuItem} onPress={toggleTheme}>
+            <Ionicons name={isDark ? "sunny-outline" : "moon-outline"} size={20} color={theme.textPrimary} />
+            <Text style={styles.menuText}>{isDark ? "Light Mode" : "Dark Mode"}</Text>
+          </TouchableOpacity>
+          <View style={styles.menuDivider} />
           <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
-            <Ionicons name="log-out-outline" size={20} color={Colors.error} />
-            <Text style={[styles.menuText, { color: Colors.error }]}>Logout</Text>
+            <Ionicons name="log-out-outline" size={20} color={theme.error} />
+            <Text style={[styles.menuText, { color: theme.error }]}>Logout</Text>
           </TouchableOpacity>
         </Animated.View>
       )}
@@ -226,7 +236,7 @@ export default function CommunityScreen() {
 
         <View style={styles.row}>
           <TouchableOpacity style={styles.card} onPress={handlePressAnnouncement}>
-            <View style={[styles.iconBox, { backgroundColor: '#e0f2fe' }]}>
+            <View style={[styles.iconBox, { backgroundColor: 'rgba(59, 130, 246, 0.1)' }]}>
               <Ionicons name="megaphone" size={32} color={Colors.secondary} />
             </View>
             <Text style={styles.cardText}>Announcements</Text>
@@ -235,7 +245,7 @@ export default function CommunityScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.card} onPress={goToChat}>
-            <View style={[styles.iconBox, { backgroundColor: '#dcfce7' }]}>
+            <View style={[styles.iconBox, { backgroundColor: 'rgba(16, 185, 129, 0.1)' }]}>
               <Ionicons name="chatbubbles" size={32} color={Colors.success} />
             </View>
             <Text style={styles.cardText}>Admin Chat</Text>
@@ -246,7 +256,7 @@ export default function CommunityScreen() {
 
         <View style={styles.row}>
           <TouchableOpacity style={styles.card} onPress={handlePressGD}>
-            <View style={[styles.iconBox, { backgroundColor: '#fef3c7' }]}>
+            <View style={[styles.iconBox, { backgroundColor: 'rgba(245, 158, 11, 0.1)' }]}>
               <Ionicons name="people" size={32} color={Colors.accent} />
             </View>
             <Text style={styles.cardText}>Group Discussion</Text>
@@ -255,7 +265,7 @@ export default function CommunityScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.card} onPress={() => router.push('/social')}>
-            <View style={[styles.iconBox, { backgroundColor: '#fae8ff' }]}>
+            <View style={[styles.iconBox, { backgroundColor: 'rgba(168, 85, 247, 0.1)' }]}>
               <Ionicons name="share-social" size={32} color="#a855f7" />
             </View>
             <Text style={styles.cardText}>Social Media</Text>
@@ -264,17 +274,20 @@ export default function CommunityScreen() {
         </View>
 
         <View style={styles.row}>
-          <TouchableOpacity style={[styles.card, { width: '100%' }]} onPress={() => setModalVisible(true)}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <View style={[styles.iconBox, { backgroundColor: '#fee2e2' }]}>
-                <Ionicons name="videocam" size={32} color="#ef4444" />
-              </View>
-              <View style={{ marginLeft: 15 }}>
-                <Text style={styles.cardText}>Video Meet</Text>
-                <Text style={styles.cardSubText}>Join live sessions</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={24} color={Colors.textLight} style={{ marginLeft: 'auto' }} />
+          <TouchableOpacity style={styles.card} onPress={() => setModalVisible(true)}>
+            <View style={[styles.iconBox, { backgroundColor: 'rgba(239, 68, 68, 0.1)' }]}>
+              <Ionicons name="videocam" size={32} color={theme.error} />
             </View>
+            <Text style={styles.cardText}>Video Meet</Text>
+            <Text style={styles.cardSubText}>Join live sessions</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.card} onPress={toggleTheme}>
+            <View style={[styles.iconBox, { backgroundColor: isDark ? 'rgba(251, 191, 36, 0.1)' : 'rgba(59, 130, 246, 0.1)' }]}>
+              <Ionicons name={isDark ? "sunny" : "moon"} size={32} color={isDark ? theme.warning : theme.primary} />
+            </View>
+            <Text style={styles.cardText}>Appearance</Text>
+            <Text style={styles.cardSubText}>{isDark ? "Switch to Light" : "Switch to Dark"}</Text>
           </TouchableOpacity>
         </View>
 
@@ -375,7 +388,7 @@ const MeetingsList = ({ onSelect }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (Colors) => StyleSheet.create({
   header: {
     backgroundColor: Colors.primary,
     paddingBottom: 20,
@@ -395,7 +408,7 @@ const styles = StyleSheet.create({
   profileImage: { width: 50, height: 50, borderRadius: 25, borderWidth: 2, borderColor: Colors.accent },
   profilePlaceholder: { width: 50, height: 50, borderRadius: 25, backgroundColor: Colors.surface, justifyContent: 'center', alignItems: 'center' },
 
-  grid: { padding: 20 },
+  grid: { padding: 20, backgroundColor: Colors.background, flexGrow: 1 }, // Ensure bg color
   dashboardTitle: { fontSize: 20, fontWeight: 'bold', color: Colors.textPrimary, marginBottom: 15 },
   row: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 },
 
@@ -423,7 +436,7 @@ const styles = StyleSheet.create({
 
   // Modal Styles
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center' },
-  modalView: { margin: 20, backgroundColor: 'white', borderRadius: 20, padding: 25, elevation: 5 },
+  modalView: { margin: 20, backgroundColor: Colors.surface, borderRadius: 20, padding: 25, elevation: 5 },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   modalTitle: { fontSize: 22, fontWeight: 'bold', color: Colors.textPrimary },
   sectionTitle: { fontSize: 16, fontWeight: '600', color: Colors.textPrimary, marginBottom: 10 },
@@ -434,7 +447,7 @@ const styles = StyleSheet.create({
   meetingItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 12, backgroundColor: Colors.inputBg, borderRadius: 12, marginBottom: 8 },
   meetingTitle: { fontWeight: 'bold', color: Colors.textPrimary, fontSize: 14 },
   meetingTime: { fontSize: 12, color: Colors.textSecondary },
-  codeBadge: { backgroundColor: '#e2e8f0', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4 },
+  codeBadge: { backgroundColor: Colors.inputBg, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4, borderWidth: 1, borderColor: Colors.border },
   codeText: { fontSize: 12, fontWeight: 'bold', color: Colors.secondary },
 
   badge: {
@@ -456,7 +469,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 100,
     right: 20,
-    backgroundColor: 'white',
+    backgroundColor: Colors.surface,
     borderRadius: 12,
     elevation: 10,
     zIndex: 20,

@@ -12,6 +12,7 @@ import { Video, ResizeMode } from 'expo-av';
 import ImageViewer from 'react-native-image-zoom-viewer';
 import { API_BASE } from '../../../src/services/apiService';
 import { Colors, GlobalStyles } from '../../../src/styles/theme';
+import { useTheme } from '../../../src/context/ThemeContext';
 
 const BACKEND_URL = "http://192.168.29.129:5000";
 
@@ -47,6 +48,10 @@ const processFeed = (items) => {
 };
 
 export default function GroupFeedScreen() {
+    const { colors } = useTheme();
+    const theme = colors || Colors;
+    const styles = getStyles(theme);
+
     const { id: groupId, groupName } = useLocalSearchParams();
     const router = useRouter();
     const [originalFeed, setOriginalFeed] = useState([]); // Raw data
@@ -569,7 +574,10 @@ export default function GroupFeedScreen() {
         }
 
         const showContent = item.content && item.content !== item.fileName;
-        const timeColor = (isMedia && !showContent && !hasPoll && !item.title) ? '#fff' : (isMe ? '#E0F2F1' : '#757575');
+        const timeColor = (isMedia && !showContent && !hasPoll && !item.title) ? theme.white : (isMe ? theme.white : theme.textSecondary);
+        // Note: isMe bubble is theme.secondary (Blue), text is White. Time should be White.
+        // !isMe bubble is theme.white (Light) / theme.surface (Dark). Text is Black / White. Time should be Grey.
+
         const timeContainerStyle = (isMedia && !showContent && !hasPoll && !item.title)
             ? { position: 'absolute', bottom: 5, right: 10, backgroundColor: 'rgba(0,0,0,0.3)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 10 }
             : { marginTop: 2, alignSelf: 'flex-end', marginLeft: 10 };
@@ -583,17 +591,15 @@ export default function GroupFeedScreen() {
                         styles.msgBubble,
                         isMe ? styles.msgMe : styles.msgOther,
                         { maxWidth: '85%' },
-                        isMedia ? { padding: 3, paddingBottom: 3 } : { padding: 8 } // Tighter hugging for media
+                        isMedia ? { padding: 3, paddingBottom: 3 } : { padding: 8 }
                     ]}
                 >
-                    {/* Header (Sender Name) - Only for simple text/poll or if inside media bubble but at top */}
                     {!isMe && (
                         <Text style={[styles.senderNameAdmin, isMedia ? { marginLeft: 5, marginTop: 5 } : {}]}>
                             Admin Announcement
                         </Text>
                     )}
 
-                    {/* Media - Image */}
                     {hasImage && (
                         <TouchableOpacity onPress={() => openImageViewer(`${BACKEND_URL}${item.fileUrl}`)}>
                             <Image
@@ -604,7 +610,6 @@ export default function GroupFeedScreen() {
                         </TouchableOpacity>
                     )}
 
-                    {/* Media - Video */}
                     {hasVideo && (
                         <View style={{ marginBottom: (showContent || item.title) ? 5 : 0 }}>
                             <Video
@@ -617,7 +622,6 @@ export default function GroupFeedScreen() {
                         </View>
                     )}
 
-                    {/* Content Container (Title / Text / Poll) */}
                     {(item.title || showContent || hasPoll) && (
                         <View style={{ paddingHorizontal: isMedia ? 5 : 0, paddingBottom: isMedia ? 5 : 0 }}>
                             {item.title && item.title !== 'Attachment' && item.title !== 'Poll' && !hasPoll && (
@@ -636,10 +640,10 @@ export default function GroupFeedScreen() {
                                         const userVotedForThis = item.poll.userVotes && item.poll.userVotes.some(v => (v.userId === userId || v.userId?._id === userId) && v.optionIndex === index);
 
                                         return (
-                                            <TouchableOpacity key={index} style={[styles.pollOption, { borderColor: userVotedForThis ? '#005b96' : 'rgba(0,0,0,0.1)' }]} onPress={() => handleVote(item._id, index)}>
-                                                <View style={[styles.pollProgress, { width: `${percent}%` }]} />
+                                            <TouchableOpacity key={index} style={[styles.pollOption, { borderColor: userVotedForThis ? theme.secondary : theme.border }]} onPress={() => handleVote(item._id, index)}>
+                                                <View style={[styles.pollProgress, { width: `${percent}%`, backgroundColor: userVotedForThis ? 'rgba(59, 130, 246, 0.2)' : 'rgba(0,0,0,0.05)' }]} />
                                                 <View style={styles.pollContent}>
-                                                    <Ionicons name={userVotedForThis ? "checkbox" : "square-outline"} size={20} color={userVotedForThis ? "#005b96" : "#666"} style={{ marginRight: 8, zIndex: 1 }} />
+                                                    <Ionicons name={userVotedForThis ? "checkbox" : "square-outline"} size={20} color={userVotedForThis ? theme.secondary : theme.textSecondary} style={{ marginRight: 8, zIndex: 1 }} />
                                                     <Text style={styles.pollOptionText}>{opt.text}</Text>
                                                     <Text style={styles.pollPercentText}>{percent}%</Text>
                                                 </View>
@@ -652,29 +656,27 @@ export default function GroupFeedScreen() {
                         </View>
                     )}
 
-                    {/* Document Box */}
                     {hasDoc && (
                         <View style={{ padding: isMedia ? 5 : 0 }}>
                             <TouchableOpacity style={styles.docBox} onPress={() => Linking.openURL(`${BACKEND_URL}${item.fileUrl}`)}>
-                                <View style={{ backgroundColor: '#ffcccc', padding: 8, borderRadius: 5 }}>
-                                    <Ionicons name="document-text" size={30} color="#d32f2f" />
+                                <View style={{ backgroundColor: 'rgba(211, 47, 47, 0.1)', padding: 8, borderRadius: 5 }}>
+                                    <Ionicons name="document-text" size={30} color={theme.error || '#d32f2f'} />
                                 </View>
                                 <View style={{ marginLeft: 10, flex: 1 }}>
-                                    <Text numberOfLines={1} style={[styles.docText, { color: '#333' }]}>{item.fileName || 'Document'}</Text>
+                                    <Text numberOfLines={1} style={[styles.docText, { color: theme.textPrimary }]}>{item.fileName || 'Document'}</Text>
                                     <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
-                                        <Text style={{ fontSize: 10, color: '#666' }}>
+                                        <Text style={{ fontSize: 10, color: theme.textSecondary }}>
                                             {item.fileName?.split('.').pop().toUpperCase() || 'FILE'} • Tap to View
                                         </Text>
                                     </View>
                                 </View>
                                 <View style={{ padding: 5 }}>
-                                    <Ionicons name="download-outline" size={24} color="#666" />
+                                    <Ionicons name="download-outline" size={24} color={theme.textSecondary} />
                                 </View>
                             </TouchableOpacity>
                         </View>
                     )}
 
-                    {/* Time (Dynamic Position: Overlay if simple media, else normal) */}
                     <View style={timeContainerStyle}>
                         <Text style={{ fontSize: 10, color: timeColor }}>
                             {formatTime(item.createdAt)}
@@ -695,7 +697,7 @@ export default function GroupFeedScreen() {
                 >
                     {!isMe && <Text style={styles.senderName}>{item.sender?.name || 'User'}</Text>}
                     <Text style={isMe ? styles.msgTextMe : styles.msgTextOther}>{item.content}</Text>
-                    <Text style={[styles.msgTime, isMe ? { color: '#E0F2F1' } : { color: '#757575' }]}>
+                    <Text style={[styles.msgTime, isMe ? { color: theme.white } : { color: theme.textSecondary }]}>
                         {formatTime(item.createdAt)}
                     </Text>
                 </TouchableOpacity>
@@ -729,7 +731,7 @@ export default function GroupFeedScreen() {
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
         >
-            <StatusBar style="light" backgroundColor="#075e54" />
+            <StatusBar style="light" backgroundColor={theme.primary} />
 
             {/* Header */}
             <View style={[styles.header, { paddingTop: insets.top + 10, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
@@ -769,7 +771,7 @@ export default function GroupFeedScreen() {
                 onContentSizeChange={scrollToBottom}
                 onLayout={scrollToBottom}
                 refreshControl={
-                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#075e54']} />
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[theme.primary]} />
                 }
             />
 
@@ -1038,64 +1040,66 @@ export default function GroupFeedScreen() {
     );
 }
 
-const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: Colors.background }, // Neo-Finance BG
-    header: { backgroundColor: Colors.primary, padding: 15, paddingBottom: 15, flexDirection: 'row', alignItems: 'center', elevation: 5 },
-    headerText: { color: Colors.white, fontSize: 20, fontWeight: 'bold' },
-    headerSubText: { color: Colors.textLight, fontSize: 12 },
+function getStyles(theme) {
+    return StyleSheet.create({
+        container: { flex: 1, backgroundColor: theme.background },
+        header: { backgroundColor: theme.primary, padding: 15, paddingBottom: 15, flexDirection: 'row', alignItems: 'center', elevation: 5 },
+        headerText: { color: theme.white, fontSize: 20, fontWeight: 'bold' },
+        headerSubText: { color: theme.textLight, fontSize: 12 },
 
-    // Date Header
-    dateHeader: { alignItems: 'center', marginVertical: 10 },
-    dateHeaderText: { backgroundColor: Colors.inputBg, paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12, color: Colors.textSecondary, fontSize: 11, overflow: 'hidden' },
+        // Date Header
+        dateHeader: { alignItems: 'center', marginVertical: 10 },
+        dateHeaderText: { backgroundColor: theme.inputBg, paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12, color: theme.textSecondary, fontSize: 11, overflow: 'hidden' },
 
-    // Messages
-    msgRow: { flexDirection: 'row', alignItems: 'flex-end', marginBottom: 5, paddingHorizontal: 10 },
-    msgBubble: { borderRadius: 16, padding: 10, maxWidth: '85%', elevation: 1, overflow: 'hidden' },
+        // Messages
+        msgRow: { flexDirection: 'row', alignItems: 'flex-end', marginBottom: 5, paddingHorizontal: 10 },
+        msgBubble: { borderRadius: 16, padding: 10, maxWidth: '85%', elevation: 1, overflow: 'hidden' },
 
-    // Me: Blue Bubble, White Text
-    msgMe: { backgroundColor: Colors.secondary, alignSelf: 'flex-end', borderBottomRightRadius: 2 },
-    // Other: White Bubble, Dark Text
-    msgOther: { backgroundColor: Colors.white, alignSelf: 'flex-start', borderBottomLeftRadius: 2 },
+        // Me: Secondary (Blue), White Text
+        msgMe: { backgroundColor: theme.secondary, alignSelf: 'flex-end', borderBottomRightRadius: 2 },
+        // Other: Surface/White, Text Primary
+        msgOther: { backgroundColor: theme.surface || theme.white, alignSelf: 'flex-start', borderBottomLeftRadius: 2 },
 
-    senderName: { fontSize: 11, color: Colors.accent, fontWeight: 'bold', marginBottom: 2 },
-    senderNameAdmin: { fontSize: 11, color: Colors.error, fontWeight: 'bold', marginBottom: 2 },
+        senderName: { fontSize: 11, color: theme.accent, fontWeight: 'bold', marginBottom: 2 },
+        senderNameAdmin: { fontSize: 11, color: theme.error, fontWeight: 'bold', marginBottom: 2 },
 
-    msgTextMe: { color: Colors.white, fontSize: 16 },
-    msgTextOther: { color: Colors.textPrimary, fontSize: 16 },
+        msgTextMe: { color: theme.white, fontSize: 16 },
+        msgTextOther: { color: theme.textPrimary, fontSize: 16 },
 
-    msgTime: { fontSize: 10, alignSelf: 'flex-end', marginTop: 4, color: 'rgba(0,0,0,0.5)' }, // Dynamic check in render needed for 'Me' time color
+        msgTime: { fontSize: 10, alignSelf: 'flex-end', marginTop: 4, color: theme.textSecondary },
 
-    // Announcement Specific
-    announcementTitle: { fontWeight: 'bold', fontSize: 15, marginBottom: 4, color: Colors.textPrimary },
-    inlineImage: { width: 250, height: 300, marginBottom: 0, backgroundColor: Colors.inputBg },
-    docBox: { flexDirection: 'row', alignItems: 'center', marginVertical: 5, backgroundColor: 'rgba(0,0,0,0.02)', padding: 8, borderRadius: 8, width: 250, borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)' },
-    docText: { marginLeft: 10, fontWeight: '600', fontSize: 14, color: Colors.textPrimary },
+        // Announcement Specific
+        announcementTitle: { fontWeight: 'bold', fontSize: 15, marginBottom: 4, color: theme.textPrimary },
+        inlineImage: { width: 250, height: 300, marginBottom: 0, backgroundColor: theme.inputBg },
+        docBox: { flexDirection: 'row', alignItems: 'center', marginVertical: 5, backgroundColor: 'rgba(0,0,0,0.02)', padding: 8, borderRadius: 8, width: 250, borderWidth: 1, borderColor: theme.border },
+        docText: { marginLeft: 10, fontWeight: '600', fontSize: 14, color: theme.textPrimary },
 
-    pollBox: { marginVertical: 5, width: 230 },
-    pollQuestion: { fontWeight: 'bold', fontSize: 16, marginBottom: 10, color: Colors.textPrimary },
-    pollOption: { backgroundColor: Colors.inputBg, borderRadius: 8, marginBottom: 8, borderWidth: 1, borderColor: Colors.border, overflow: 'hidden', height: 45, justifyContent: 'center' },
-    pollProgress: { position: 'absolute', height: '100%', backgroundColor: '#bfdbfe' }, // Light Blue
-    pollContent: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 12, alignItems: 'center', width: '100%' },
-    pollOptionText: { fontSize: 14, zIndex: 1, color: Colors.textPrimary, fontWeight: '500' },
-    pollPercentText: { fontSize: 13, fontWeight: 'bold', color: Colors.secondary, zIndex: 1 },
-    pollFooter: { fontSize: 11, color: Colors.textSecondary, textAlign: 'center', marginTop: 6 },
+        pollBox: { marginVertical: 5, width: 230 },
+        pollQuestion: { fontWeight: 'bold', fontSize: 16, marginBottom: 10, color: theme.textPrimary },
+        pollOption: { backgroundColor: theme.inputBg, borderRadius: 8, marginBottom: 8, borderWidth: 1, borderColor: theme.border, overflow: 'hidden', height: 45, justifyContent: 'center' },
+        pollProgress: { position: 'absolute', height: '100%', backgroundColor: 'rgba(3, 57, 108, 0.1)' },
+        pollContent: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 12, alignItems: 'center', width: '100%' },
+        pollOptionText: { fontSize: 14, zIndex: 1, color: theme.textPrimary, fontWeight: '500' },
+        pollPercentText: { fontSize: 13, fontWeight: 'bold', color: theme.secondary, zIndex: 1 },
+        pollFooter: { fontSize: 11, color: theme.textSecondary, textAlign: 'center', marginTop: 6 },
 
-    // Input
-    inputContainer: { flexDirection: 'row', alignItems: 'center', padding: 10, backgroundColor: Colors.white, minHeight: 60, borderTopWidth: 1, borderTopColor: Colors.border },
-    attachIconBtn: { padding: 8 },
-    input: { flex: 1, backgroundColor: Colors.inputBg, borderRadius: 20, paddingHorizontal: 15, paddingVertical: 10, fontSize: 16, maxHeight: 100, borderWidth: 0, color: Colors.textPrimary },
-    sendIconBtn: { backgroundColor: Colors.secondary, width: 45, height: 45, borderRadius: 25, justifyContent: 'center', alignItems: 'center', marginLeft: 10 },
+        // Input
+        inputContainer: { flexDirection: 'row', alignItems: 'center', padding: 10, backgroundColor: theme.surface, minHeight: 60, borderTopWidth: 1, borderTopColor: theme.border },
+        attachIconBtn: { padding: 8 },
+        input: { flex: 1, backgroundColor: theme.inputBg, borderRadius: 20, paddingHorizontal: 15, paddingVertical: 10, fontSize: 16, maxHeight: 100, borderWidth: 0, color: theme.textPrimary },
+        sendIconBtn: { backgroundColor: theme.secondary, width: 45, height: 45, borderRadius: 25, justifyContent: 'center', alignItems: 'center', marginLeft: 10 },
 
-    // Attachment Menu
-    menuContainer: { position: 'absolute', bottom: 80, left: 15, backgroundColor: Colors.white, padding: 20, borderRadius: 20, elevation: 10, width: 220, shadowColor: "#000", shadowOffset: { height: 5 }, shadowOpacity: 0.2, shadowRadius: 10 },
-    menuItem: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
-    menuIcon: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginRight: 15 },
-    menuText: { fontSize: 16, color: Colors.textPrimary, fontWeight: '500' },
+        // Attachment Menu
+        menuContainer: { position: 'absolute', bottom: 80, left: 15, backgroundColor: theme.surface, padding: 20, borderRadius: 20, elevation: 10, width: 220, shadowColor: theme.shadow, shadowOffset: { height: 5 }, shadowOpacity: 0.2, shadowRadius: 10 },
+        menuItem: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
+        menuIcon: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginRight: 15 },
+        menuText: { fontSize: 16, color: theme.textPrimary, fontWeight: '500' },
 
-    // Modal
-    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' },
-    modalContent: { backgroundColor: Colors.surface, padding: 25, borderRadius: 20, width: '85%', elevation: 10 },
-    modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 20, color: Colors.textPrimary },
-    modalInput: { borderBottomWidth: 1, borderBottomColor: Colors.border, padding: 10, marginBottom: 15, fontSize: 16, color: Colors.textPrimary },
+        // Modal
+        modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' },
+        modalContent: { backgroundColor: theme.surface, padding: 25, borderRadius: 20, width: '85%', elevation: 10 },
+        modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 20, color: theme.textPrimary },
+        modalInput: { borderBottomWidth: 1, borderBottomColor: theme.border, padding: 10, marginBottom: 15, fontSize: 16, color: theme.textPrimary },
 
-});
+    });
+}

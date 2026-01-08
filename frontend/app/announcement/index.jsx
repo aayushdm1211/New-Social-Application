@@ -5,9 +5,14 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_BASE } from '../../src/services/apiService';
 import { Colors, GlobalStyles } from '../../src/styles/theme';
+import { useTheme } from '../../src/context/ThemeContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function AnnouncementGroupsScreen() {
+    const { colors } = useTheme();
+    const theme = colors || Colors;
+    const styles = getStyles(theme);
+
     const router = useRouter();
     const [groups, setGroups] = useState([]);
     const [isAdmin, setIsAdmin] = useState(false);
@@ -34,9 +39,17 @@ export default function AnnouncementGroupsScreen() {
     const fetchGroups = async () => {
         try {
             const res = await fetch(`${API_BASE.replace('/auth', '/admin')}/group/list`);
+            const currentUserId = await AsyncStorage.getItem('userId');
+            const currentUserRole = await AsyncStorage.getItem('userRole');
+
             if (res.ok) {
                 const data = await res.json();
-                setGroups(data);
+                // Filter: Show if Admin OR if Member
+                const filtered = data.filter(g =>
+                    currentUserRole === 'admin' ||
+                    (g.members && g.members.some(m => (m._id === currentUserId || m === currentUserId)))
+                );
+                setGroups(filtered);
             }
         } catch (err) {
             console.error("Fetch Error:", err);
@@ -80,7 +93,7 @@ export default function AnnouncementGroupsScreen() {
             <SafeAreaView>
                 <View style={styles.headerRow}>
                     <TouchableOpacity onPress={() => router.back()}>
-                        <Ionicons name="arrow-back" size={28} color={Colors.white} />
+                        <Ionicons name="arrow-back" size={28} color={theme.white} />
                     </TouchableOpacity>
                     <Text style={styles.headerText}>Announcement Groups</Text>
                     <View style={{ width: 28 }} />
@@ -109,8 +122,8 @@ export default function AnnouncementGroupsScreen() {
                             {item.icon ? (
                                 <Image source={{ uri: `${API_BASE.replace('/api/auth', '')}${item.icon}` }} style={styles.groupIcon} />
                             ) : (
-                                <View style={[styles.iconContainer, { backgroundColor: '#e0f2fe' }]}>
-                                    <Ionicons name="people" size={24} color={Colors.secondary} />
+                                <View style={[styles.iconContainer, { backgroundColor: theme.inputBg }]}>
+                                    <Ionicons name="people" size={24} color={theme.secondary} />
                                 </View>
                             )}
 
@@ -118,17 +131,17 @@ export default function AnnouncementGroupsScreen() {
                                 <Text style={styles.title}>{item.name}</Text>
                                 <Text style={styles.content} numberOfLines={2}>{item.description || 'No description available'}</Text>
                                 <View style={styles.metaContainer}>
-                                    <Ionicons name="person-outline" size={12} color={Colors.textLight} />
+                                    <Ionicons name="person-outline" size={12} color={theme.textLight} />
                                     <Text style={styles.date}>{item.members?.length || 0} members</Text>
                                 </View>
                             </View>
-                            <Ionicons name="chevron-forward" size={24} color={Colors.border} />
+                            <Ionicons name="chevron-forward" size={24} color={theme.border} />
                         </View>
                     </TouchableOpacity>
                 )}
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>
-                        <Ionicons name="chatbubbles-outline" size={60} color={Colors.border} />
+                        <Ionicons name="chatbubbles-outline" size={60} color={theme.border} />
                         <Text style={styles.emptyText}>No groups found. {isAdmin ? "Create one!" : "Check back later."}</Text>
                     </View>
                 }
@@ -176,78 +189,80 @@ export default function AnnouncementGroupsScreen() {
     );
 }
 
-const styles = StyleSheet.create({
-    header: {
-        backgroundColor: Colors.primary,
-        paddingBottom: 20,
-        borderBottomLeftRadius: 30,
-        borderBottomRightRadius: 30,
-        paddingHorizontal: 20,
-        paddingTop: 10,
-        elevation: 5,
-        marginBottom: 10
-    },
-    headerRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginTop: 10
-    },
-    headerText: { color: Colors.white, fontSize: 20, fontWeight: 'bold' },
-    listContent: { padding: 20, paddingBottom: 100 },
-    cardContainer: { marginBottom: 15 },
-    card: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 16,
-        backgroundColor: Colors.surface,
-        borderRadius: 16,
-        elevation: 3,
-        shadowColor: Colors.shadow,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.05,
-        shadowRadius: 8
-    },
-    iconContainer: {
-        width: 50,
-        height: 50,
-        borderRadius: 25,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: 15
-    },
-    groupIcon: {
-        width: 50,
-        height: 50,
-        borderRadius: 25,
-        marginRight: 15,
-        backgroundColor: Colors.inputBg
-    },
-    textContainer: { flex: 1 },
-    title: { fontSize: 16, fontWeight: 'bold', color: Colors.textPrimary },
-    content: { fontSize: 13, color: Colors.textSecondary, marginTop: 4 },
-    metaContainer: { flexDirection: 'row', alignItems: 'center', marginTop: 6 },
-    date: { fontSize: 12, color: Colors.textLight, marginLeft: 4 },
-    fab: {
-        position: 'absolute',
-        bottom: 30,
-        right: 30,
-        width: 60,
-        height: 60,
-        borderRadius: 30,
-        backgroundColor: Colors.secondary,
-        justifyContent: 'center',
-        alignItems: 'center',
-        elevation: 5,
-        shadowColor: Colors.secondary,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-    },
-    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 },
-    modalView: { backgroundColor: 'white', borderRadius: 20, padding: 25, elevation: 5 },
-    modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-    modalTitle: { fontSize: 20, fontWeight: 'bold', color: Colors.textPrimary },
-    emptyContainer: { alignItems: 'center', marginTop: 50 },
-    emptyText: { marginTop: 10, color: Colors.textLight, fontSize: 16 }
-});
+function getStyles(Colors) {
+    return StyleSheet.create({
+        header: {
+            backgroundColor: Colors.primary,
+            paddingBottom: 20,
+            borderBottomLeftRadius: 30,
+            borderBottomRightRadius: 30,
+            paddingHorizontal: 20,
+            paddingTop: 10,
+            elevation: 5,
+            marginBottom: 10
+        },
+        headerRow: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginTop: 10
+        },
+        headerText: { color: Colors.white, fontSize: 20, fontWeight: 'bold' },
+        listContent: { padding: 20, paddingBottom: 100 },
+        cardContainer: { marginBottom: 15 },
+        card: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            padding: 16,
+            backgroundColor: Colors.surface,
+            borderRadius: 16,
+            elevation: 3,
+            shadowColor: Colors.shadow,
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.05,
+            shadowRadius: 8
+        },
+        iconContainer: {
+            width: 50,
+            height: 50,
+            borderRadius: 25,
+            justifyContent: 'center',
+            alignItems: 'center',
+            marginRight: 15
+        },
+        groupIcon: {
+            width: 50,
+            height: 50,
+            borderRadius: 25,
+            marginRight: 15,
+            backgroundColor: Colors.inputBg
+        },
+        textContainer: { flex: 1 },
+        title: { fontSize: 16, fontWeight: 'bold', color: Colors.textPrimary },
+        content: { fontSize: 13, color: Colors.textSecondary, marginTop: 4 },
+        metaContainer: { flexDirection: 'row', alignItems: 'center', marginTop: 6 },
+        date: { fontSize: 12, color: Colors.textLight, marginLeft: 4 },
+        fab: {
+            position: 'absolute',
+            bottom: 30,
+            right: 30,
+            width: 60,
+            height: 60,
+            borderRadius: 30,
+            backgroundColor: Colors.secondary,
+            justifyContent: 'center',
+            alignItems: 'center',
+            elevation: 5,
+            shadowColor: Colors.secondary,
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.3,
+            shadowRadius: 8,
+        },
+        modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 },
+        modalView: { backgroundColor: Colors.surface, borderRadius: 20, padding: 25, elevation: 5 },
+        modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+        modalTitle: { fontSize: 20, fontWeight: 'bold', color: Colors.textPrimary },
+        emptyContainer: { alignItems: 'center', marginTop: 50 },
+        emptyText: { marginTop: 10, color: Colors.textLight, fontSize: 16 }
+    });
+}

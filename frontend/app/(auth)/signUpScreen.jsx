@@ -4,9 +4,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from "expo-router";
 import { startSignup } from "../../src/controllers/authController";
 import { Colors, GlobalStyles } from "../../src/styles/theme";
+import { useTheme } from '../../src/context/ThemeContext';
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function SignUpScreen() {
+  const { colors } = useTheme();
+  const theme = colors || Colors;
+  const styles = getStyles(theme);
+
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -51,13 +56,13 @@ export default function SignUpScreen() {
   };
 
   return (
-    <View style={GlobalStyles.container}>
+    <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <SafeAreaView>
           <View style={{ alignItems: 'center', marginTop: 10 }}>
             <View style={styles.iconContainer}>
-              <Ionicons name="person-add-outline" size={35} color={Colors.accent} />
+              <Ionicons name="person-add-outline" size={35} color={theme.accent} />
             </View>
             <Text style={styles.headerText}>Join FinanceChat</Text>
             <Text style={styles.headerSubText}>Create your professional profile</Text>
@@ -65,7 +70,7 @@ export default function SignUpScreen() {
         </SafeAreaView>
         {/* Back Button */}
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="white" />
+          <Ionicons name="arrow-back" size={24} color={theme.white} />
         </TouchableOpacity>
       </View>
 
@@ -76,24 +81,24 @@ export default function SignUpScreen() {
           <Text style={styles.label}>Nickname</Text>
           <TextInput
             placeholder="Unique Username (e.g. Neo_99)"
-            placeholderTextColor={Colors.textLight}
-            style={GlobalStyles.input}
+            placeholderTextColor={theme.textLight}
+            style={styles.input}
             onChangeText={checkValidation}
             value={username}
           />
 
           <View style={styles.validationContainer}>
-            <ValidationItem label="a-z" isValid={validations.hasLower} />
-            <ValidationItem label="A-Z" isValid={validations.hasUpper} />
-            <ValidationItem label="0-9" isValid={validations.hasNumber} />
-            <ValidationItem label="#!?" isValid={validations.hasSpecial} />
+            <ValidationItem label="a-z" isValid={validations.hasLower} styles={styles} theme={theme} />
+            <ValidationItem label="A-Z" isValid={validations.hasUpper} styles={styles} theme={theme} />
+            <ValidationItem label="0-9" isValid={validations.hasNumber} styles={styles} theme={theme} />
+            <ValidationItem label="#!?" isValid={validations.hasSpecial} styles={styles} theme={theme} />
           </View>
 
           <Text style={styles.label}>Email Address</Text>
           <TextInput
             placeholder="name@company.com"
-            placeholderTextColor={Colors.textLight}
-            style={GlobalStyles.input}
+            placeholderTextColor={theme.textLight}
+            style={styles.input}
             onChangeText={setEmail}
             keyboardType="email-address"
             autoCapitalize="none"
@@ -103,15 +108,15 @@ export default function SignUpScreen() {
           <Text style={styles.label}>Password</Text>
           <TextInput
             placeholder="Create a strong password"
-            placeholderTextColor={Colors.textLight}
-            style={GlobalStyles.input}
+            placeholderTextColor={theme.textLight}
+            style={styles.input}
             secureTextEntry
             onChangeText={setPassword}
             value={password}
           />
 
           <TouchableOpacity
-            style={[GlobalStyles.button, (!isFormValid || loading) && styles.disabledBtn]}
+            style={[styles.button, (!isFormValid || loading) && styles.disabledBtn]}
             onPress={handleSignup}
             disabled={loading || !isFormValid}
           >
@@ -119,7 +124,7 @@ export default function SignUpScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 20, alignSelf: 'center' }}>
-            <Text style={{ color: Colors.textSecondary }}>Already have an account? <Text style={{ color: Colors.secondary, fontWeight: 'bold' }}>Sign In</Text></Text>
+            <Text style={{ color: theme.textSecondary }}>Already have an account? <Text style={{ color: theme.secondary, fontWeight: 'bold' }}>Sign In</Text></Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -127,108 +132,133 @@ export default function SignUpScreen() {
   );
 }
 
-function ValidationItem({ label, isValid }) {
+function ValidationItem({ label, isValid, styles, theme }) {
   return (
     <View style={[styles.validationItem, isValid ? styles.validItem : styles.invalidItem]}>
       <Ionicons
         name={isValid ? "checkmark" : "ellipse-outline"}
         size={12}
-        color={isValid ? Colors.white : Colors.textSecondary}
+        color={isValid ? theme.white : theme.textSecondary}
       />
-      <Text style={[styles.validationText, { color: isValid ? Colors.white : Colors.textSecondary }]}>{label}</Text>
+      <Text style={[styles.validationText, { color: isValid ? theme.white : theme.textSecondary }]}>{label}</Text>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  header: {
-    backgroundColor: Colors.primary,
-    height: 250,
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
-    alignItems: 'center',
-    width: '100%',
-    position: 'absolute',
-    top: 0,
-    zIndex: 1
-  },
-  iconContainer: {
-    width: 70,
-    height: 70,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 35,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)'
-  },
-  headerText: {
-    color: Colors.white,
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  headerSubText: {
-    color: Colors.textLight,
-    fontSize: 13,
-  },
-  backButton: {
-    position: 'absolute',
-    top: 50,
-    left: 20,
-    padding: 5
-  },
-  contentContainer: {
-    paddingTop: 180, // Push down to reveal header
-    paddingHorizontal: 20,
-    paddingBottom: 40
-  },
-  card: {
-    backgroundColor: Colors.surface,
-    borderRadius: 20,
-    padding: 24,
-    shadowColor: Colors.shadow,
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.1,
-    shadowRadius: 20,
-    elevation: 10,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: Colors.textPrimary,
-    marginBottom: 20
-  },
-  label: {
-    color: Colors.textPrimary,
-    marginBottom: 6,
-    fontWeight: '500',
-    marginLeft: 4,
-    marginTop: 5
-  },
-  disabledBtn: {
-    backgroundColor: Colors.textLight,
-    shadowOpacity: 0,
-    elevation: 0
-  },
-  validationContainer: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 15, justifyContent: 'space-between' },
-  validationItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 20,
-    borderWidth: 1,
-    minWidth: '22%',
-    justifyContent: 'center'
-  },
-  validItem: {
-    backgroundColor: Colors.success,
-    borderColor: Colors.success
-  },
-  invalidItem: {
-    backgroundColor: Colors.inputBg,
-    borderColor: Colors.border
-  },
-  validationText: { marginLeft: 4, fontSize: 11, fontWeight: '600' }
-});
+function getStyles(theme) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: theme.background },
+    header: {
+      backgroundColor: theme.primary,
+      height: 250,
+      borderBottomLeftRadius: 30,
+      borderBottomRightRadius: 30,
+      alignItems: 'center',
+      width: '100%',
+      position: 'absolute',
+      top: 0,
+      zIndex: 1
+    },
+    iconContainer: {
+      width: 70,
+      height: 70,
+      backgroundColor: 'rgba(255,255,255,0.1)',
+      borderRadius: 35,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 8,
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.2)'
+    },
+    headerText: {
+      color: theme.white,
+      fontSize: 24,
+      fontWeight: 'bold',
+    },
+    headerSubText: {
+      color: theme.textLight,
+      fontSize: 13,
+    },
+    backButton: {
+      position: 'absolute',
+      top: 50,
+      left: 20,
+      padding: 5
+    },
+    contentContainer: {
+      paddingTop: 180,
+      paddingHorizontal: 20,
+      paddingBottom: 40
+    },
+    card: {
+      backgroundColor: theme.surface,
+      borderRadius: 20,
+      padding: 24,
+      shadowColor: theme.shadow,
+      shadowOffset: { width: 0, height: 10 },
+      shadowOpacity: 0.1,
+      shadowRadius: 20,
+      elevation: 10,
+    },
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: theme.textPrimary,
+      marginBottom: 20
+    },
+    label: {
+      color: theme.textPrimary,
+      marginBottom: 6,
+      fontWeight: '500',
+      marginLeft: 4,
+      marginTop: 5
+    },
+    input: {
+      backgroundColor: theme.inputBg,
+      padding: 15,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: theme.border,
+      color: theme.textPrimary,
+      fontSize: 16,
+      marginBottom: 10
+    },
+    button: {
+      backgroundColor: theme.primary,
+      padding: 16,
+      borderRadius: 14,
+      alignItems: 'center',
+      marginTop: 15,
+      shadowColor: theme.primary,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 5
+    },
+    disabledBtn: {
+      backgroundColor: theme.textLight,
+      shadowOpacity: 0,
+      elevation: 0
+    },
+    validationContainer: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 15, justifyContent: 'space-between' },
+    validationItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: 20,
+      borderWidth: 1,
+      minWidth: '22%',
+      justifyContent: 'center'
+    },
+    validItem: {
+      backgroundColor: theme.success,
+      borderColor: theme.success
+    },
+    invalidItem: {
+      backgroundColor: theme.inputBg,
+      borderColor: theme.border
+    },
+    validationText: { marginLeft: 4, fontSize: 11, fontWeight: '600' }
+  });
+}
